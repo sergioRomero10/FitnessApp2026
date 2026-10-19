@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty_state %}
+{% block title %}Favourites{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+  <div>
+    <h1 class="page-title mb-0">Favourite foods</h1>
+    <p class="text-secondary mb-0">Your favourites are the foods you can add to a diet.</p>
+  </div>
+  {% if items %}<a href="{{ url_for('diets.index') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Build a diet</a>{% endif %}
+</div>
+
+{% if items %}
+<div class="fa-card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr><th>Food</th><th class="d-none d-md-table-cell">Category</th><th class="text-end">kcal / 100</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for food in items %}
+        <tr>
+          <td class="fw-semibold">{{ food.name }}</td>
+          <td class="d-none d-md-table-cell category-chip">{{ food.category }}</td>
+          <td class="text-end"><span class="kcal-badge">{{ '%g'|format(food.kcal_per_100) }}</span> <span class="small text-secondary">/{{ food.unit }}</span></td>
+          <td class="text-end" style="width: 4rem">
+            <form method="post" action="{{ url_for('favorites.remove') }}">
+              {{ remove_form.csrf_token }}
+              <input type="hidden" name="key" value="{{ food.key }}">
+              <button class="btn btn-outline-danger btn-sm" type="submit" title="Remove from favourites"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+{{ empty_state('star', "You don't have any favourite foods yet", 'Tap the star next to any food in the catalogue.', url_for('foods.index'), 'Browse foods') }}
+{% endif %}
+{% endblock %}

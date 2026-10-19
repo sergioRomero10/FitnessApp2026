@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+  <div>
+    <h1 class="page-title mb-0">Diet calendar</h1>
+    <p class="text-secondary mb-0">Click a diet to open it.</p>
+  </div>
+  <a href="{{ url_for('diets.index') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New diet</a>
+</div>
+
+<div class="fa-card p-3 p-md-4">
+  <div id="calendar" data-events-url="{{ url_for('diets.events') }}"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const el = document.getElementById("calendar");
+    // Los eventos se piden en JSON a /diets/events.json (antes se incrustaban con Jinja en el JS)
+    const calendar = new FullCalendar.Calendar(el, {
+      initialView: window.innerWidth < 768 ? "listMonth" : "dayGridMonth",
+      firstDay: 1,
+      height: "auto",
+      headerToolbar: { left: "prev,next today", center: "title", right: "dayGridMonth,listMonth" },
+      events: async () => {
+        const response = await fetch(el.dataset.eventsUrl, { headers: { Accept: "application/json" } });
+        const events = await response.json();
+        // En FullCalendar el final es exclusivo: se suma un día para que se pinte el último.
+        // Se calcula en UTC: con la hora local, toISOString() restaba las 2 h de España y
+        // el último día volvía a desaparecer.
+        return events.map((e) => {
+          const end = new Date(e.end + "T00:00:00Z");
+          end.setUTCDate(end.getUTCDate() + 1);
+          return { ...e, end: end.toISOString().slice(0, 10) };
+        });
+      },
+    });
+    calendar.render();
+  });
+</script>
+{% endblock %}

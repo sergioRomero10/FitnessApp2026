@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}{{ diet.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-2">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{{ url_for('diets.index') }}">Diets</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ diet.name }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+  <div>
+    <h1 class="page-title mb-0">{{ diet.name }}</h1>
+    <p class="text-secondary mb-0"><i class="bi bi-calendar-range me-1"></i>{{ diet.start_date }} → {{ diet.end_date }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#editDiet" aria-expanded="false">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </button>
+    <form method="post" action="{{ url_for('diets.delete', diet_id=diet._id) }}" data-confirm="Delete the diet “{{ diet.name }}”?">
+      {{ delete_form.csrf_token }}
+      <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-1"></i>Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="collapse mb-4" id="editDiet">
+  <form class="fa-card p-4" method="post" action="{{ url_for('diets.edit', diet_id=diet._id) }}">
+    {{ edit_form.csrf_token }}
+    <div class="row g-3 align-items-end">
+      {{ field(edit_form.name, "col-md-5", maxlength=60, required=true) }}
+      {{ field(edit_form.start_date, "col-6 col-md-3", required=true) }}
+      {{ field(edit_form.end_date, "col-6 col-md-3", required=true) }}
+      <div class="col-md-1 d-grid"><button class="btn btn-primary" type="submit" title="Save"><i class="bi bi-check-lg"></i></button></div>
+    </div>
+  </form>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="fa-card overflow-hidden">
+      {% if lines %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Food</th><th class="text-end">Amount</th><th class="text-end">kcal</th><th></th></tr></thead>
+          <tbody>
+            {% for line in lines %}
+            <tr>
+              <td><div class="fw-semibold">{{ line.name }}</div><div class="category-chip">{{ line.category }}</div></td>
+              <td class="text-end">{{ line.grams }} {{ line.unit }}</td>
+              <td class="text-end"><span class="kcal-badge">{{ '%g'|format(line.kcal) }}</span></td>
+              <td class="text-end" style="width: 4rem">
+                <form method="post" action="{{ url_for('diets.remove_item', diet_id=diet._id) }}">
+                  {{ remove_form.csrf_token }}
+                  <input type="hidden" name="key" value="{{ line.key }}">
+                  <button class="btn btn-outline-danger btn-sm" type="submit" title="Remove"><i class="bi bi-x-lg"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-5 text-center text-secondary">This diet has no foods yet. Add one with the form.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="fa-card p-4 mb-4 text-center">
+      <div class="stat-label">Total calories</div>
+      <div class="stat-value">{{ '%g'|format(total) }} <span class="fs-5 text-secondary">kcal</span></div>
+    </div>
+
+    <form class="fa-card p-4" method="post" action="{{ url_for('diets.add_item', diet_id=diet._id) }}">
+      <h2 class="h5 mb-3"><i class="bi bi-plus-circle text-primary me-1"></i>Add food</h2>
+      {{ add_form.csrf_token }}
+      {% if add_form.food.choices %}
+        {{ field(add_form.food, "mb-3") }}
+        {{ field(add_form.grams, "mb-3", min=1, max=5000, required=true) }}
+        <button class="btn btn-primary w-100" type="submit">Add to diet</button>
+      {% else %}
+        <p class="text-secondary small">You can only add foods from your favourites, and you don't have any yet.</p>
+        <a class="btn btn-outline-light w-100" href="{{ url_for('foods.index') }}">Pick some favourites</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

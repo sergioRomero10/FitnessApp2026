@@ -1,0 +1,27 @@
+# Blueprint de Render: despliega SOLO la web (sin Kafka) contra MongoDB Atlas.
+# Ver docs/DESPLIEGUE.md para el paso a paso.
+services:
+  - type: web
+    name: fitnessapp
+    runtime: docker
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGO_URI          # cadena de conexión de MongoDB Atlas (se pide al crear)
+        sync: false
+      - key: SEED_ON_START      # sin Kafka: la web carga el CSV si la colección está vacía
+        value: "true"
+      - key: DEMO_MODE
+        value: "true"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: NOMINATIM_USER_AGENT
+        sync: false
+      - key: WEB_CONCURRENCY    # el plan gratuito tiene 512 MB de RAM
+        value: "1"

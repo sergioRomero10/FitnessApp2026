@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty_state %}
+{% block title %}Gyms{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title mb-0">Find a gym in Spain</h1>
+  <p class="text-secondary mb-0">Search by city or town. Results come from OpenStreetMap.</p>
+</div>
+
+<form class="fa-card p-3 mb-4" method="get" action="{{ url_for('gyms.index') }}" role="search">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+    <input type="search" class="form-control" name="city" value="{{ city }}" placeholder="e.g. Las Palmas de Gran Canaria" aria-label="City" required minlength="2" maxlength="80">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </div>
+</form>
+
+{% if error %}
+<div class="alert alert-warning">{{ error }}</div>
+{% elif city and not gyms %}
+{{ empty_state('emoji-frown', 'No gyms found in “' ~ city ~ '”', 'Check the spelling or try a nearby town.') }}
+{% elif gyms %}
+<div class="row g-4">
+  <div class="col-lg-7"><div id="gym-map" aria-label="Map of gyms"></div></div>
+  <div class="col-lg-5">
+    <div class="fa-card overflow-auto" style="max-height: 420px">
+      <ul class="list-group list-group-flush">
+        {% for gym in gyms %}
+        <li class="list-group-item bg-transparent gym-item" data-index="{{ loop.index0 }}" tabindex="0">
+          <div class="fw-semibold"><i class="bi bi-pin-map-fill text-primary me-1"></i>{{ gym.name }}</div>
+          <div class="small text-secondary">{{ gym.address }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if gyms %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // tojson escapa el contenido para que sea seguro dentro de <script>
+  const gyms = {{ gyms_json|tojson }};
+  const map = L.map("gym-map");
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+
+  const markers = gyms.map((g) => {
+    const popup = document.createElement("div");
+    popup.innerHTML = "<strong></strong><br><small></small>";
+    popup.querySelector("strong").textContent = g.name;
+    popup.querySelector("small").textContent = g.address;
+    return L.marker([g.lat, g.lon]).addTo(map).bindPopup(popup);
+  });
+  map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+
+  document.querySelectorAll(".gym-item").forEach((item) => {
+    const open = () => {
+      const marker = markers[Number(item.dataset.index)];
+      map.setView(marker.getLatLng(), 16);
+      marker.openPopup();
+    };
+    item.addEventListener("click", open);
+    item.addEventListener("keydown", (e) => e.key === "Enter" && open());
+  });
+</script>
+{% endif %}
+{% endblock %}

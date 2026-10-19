@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}FitnessApp{% endblock %} · FitnessApp</title>
+  <meta name="description" content="Calorie catalogue, diet planner and gym finder.">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  {% block head %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  {% set endpoint = request.endpoint or '' %}
+  <nav class="navbar navbar-expand-lg navbar-glow sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('foods.index') }}">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" height="40" alt="FitnessApp logo">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint == 'foods.index' }}" href="{{ url_for('foods.index') }}"><i class="bi bi-egg-fried me-1"></i>Foods</a></li>
+          {% if current_user %}
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint.startswith('favorites.') }}" href="{{ url_for('favorites.index') }}"><i class="bi bi-star me-1"></i>Favourites</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint.startswith('diets.') and endpoint != 'diets.calendar' }}" href="{{ url_for('diets.index') }}"><i class="bi bi-clipboard2-pulse me-1"></i>Diets</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint == 'diets.calendar' }}" href="{{ url_for('diets.calendar') }}"><i class="bi bi-calendar3 me-1"></i>Calendar</a></li>
+          {% endif %}
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint.startswith('gyms.') }}" href="{{ url_for('gyms.index') }}"><i class="bi bi-geo-alt me-1"></i>Gyms</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if endpoint == 'main.about' }}" href="{{ url_for('main.about') }}"><i class="bi bi-info-circle me-1"></i>About</a></li>
+        </ul>
+
+        {% if current_user %}
+        <div class="d-flex align-items-center gap-2">
+          <img class="avatar" alt="" referrerpolicy="no-referrer"
+               src="{{ current_user.picture or url_for('static', filename='img/avatar.png') }}"
+               onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/avatar.png') }}'">
+          <span class="small fw-semibold">{{ current_user.name }}</span>
+          {% if current_user.is_guest %}<span class="badge text-bg-secondary">guest</span>{% endif %}
+          <form method="post" action="{{ url_for('auth.logout') }}" class="ms-2">
+            {{ logout_form.hidden_tag() }}
+            <button class="btn btn-outline-light btn-sm" type="submit"><i class="bi bi-box-arrow-right me-1"></i>Log out</button>
+          </form>
+        </div>
+        {% else %}
+        <a href="{{ url_for('auth.login', next=request.full_path) }}" class="btn btn-primary btn-sm px-3"><i class="bi bi-person me-1"></i>Log in</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4 py-lg-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="py-4 mt-auto">
+    <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+      <span>FitnessApp · TFG DAM by Sergio Romero · modernised 2026</span>
+      <span>Food data from a public calorie dataset · Maps © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</span>
+    </div>
+  </footer>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toasts"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

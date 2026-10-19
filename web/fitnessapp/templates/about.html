@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import animated_word %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<section class="text-center mb-5">
+  {{ animated_word() }}
+  <p class="hero-subtitle">Final project (TFG) of the Multiplatform Application Development degree, originally built in 2023 and modernised in 2026.</p>
+</section>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4"><div class="fa-card p-4 h-100 text-center"><div class="stat-value">{{ "{:,}".format(food_count) }}</div><div class="stat-label">foods in the catalogue</div></div></div>
+  <div class="col-md-4"><div class="fa-card p-4 h-100 text-center"><div class="stat-value">5</div><div class="stat-label">services in Docker</div></div></div>
+  <div class="col-md-4"><div class="fa-card p-4 h-100 text-center"><div class="stat-value">0</div><div class="stat-label">secrets in the code</div></div></div>
+</div>
+
+<div class="fa-card p-4 p-md-5 mb-4">
+  <h2 class="h5 mb-3">How it works</h2>
+  <!-- Diagrama de la arquitectura: CSV -> productor -> Kafka -> consumidor -> MongoDB <- Flask -->
+  <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 text-center small">
+    <span class="badge rounded-pill text-bg-secondary p-2">calories.csv</span><i class="bi bi-arrow-right text-primary"></i>
+    <span class="badge rounded-pill text-bg-secondary p-2">Kafka producer</span><i class="bi bi-arrow-right text-primary"></i>
+    <span class="badge rounded-pill p-2" style="background: var(--fa-red)">Apache Kafka</span><i class="bi bi-arrow-right text-primary"></i>
+    <span class="badge rounded-pill text-bg-secondary p-2">Kafka consumer</span><i class="bi bi-arrow-right text-primary"></i>
+    <span class="badge rounded-pill p-2 text-bg-success">MongoDB</span><i class="bi bi-arrow-left-right text-primary"></i>
+    <span class="badge rounded-pill text-bg-light p-2">Flask web app</span>
+  </div>
+  <ul class="mt-4 mb-0 text-secondary">
+    <li>A <strong>producer</strong> publishes every row of the calorie dataset to a Kafka topic.</li>
+    <li>A <strong>consumer</strong> reads the topic, normalises the data and upserts it into MongoDB.</li>
+    <li>The <strong>Flask</strong> app reads MongoDB: search, favourites, diets with automatic calorie totals and a calendar.</li>
+    <li>Gym search uses the <strong>OpenStreetMap Nominatim</strong> API and shows results on a Leaflet map.</li>
+    <li>Login with <strong>Google</strong> (OpenID Connect) or as a temporary guest.</li>
+  </ul>
+</div>
+
+<div class="fa-card p-4 p-md-5">
+  <h2 class="h5 mb-3">Tech stack</h2>
+  <div class="d-flex flex-wrap gap-2">
+    {% for tech in ["Python 3.13", "Flask 3", "Authlib", "Flask-WTF", "MongoDB 8", "Apache Kafka 4 (KRaft)", "confluent-kafka", "Docker Compose", "Gunicorn", "Bootstrap 5.3", "FullCalendar 6", "Leaflet", "pytest", "GitHub Actions"] %}
+    <span class="badge rounded-pill border border-secondary-subtle text-body p-2">{{ tech }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

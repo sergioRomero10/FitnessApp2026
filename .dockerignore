@@ -1,0 +1,10 @@
+.git
+.github
+.env
+**/client_secret*.json
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.pytest_cache
+**/.ruff_cache
+docs

@@ -1,0 +1,5 @@
+# Finales de línea LF en todo el repo (Docker y GitHub Actions corren en Linux)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.docx binary

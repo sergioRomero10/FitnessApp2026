@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ code }}{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+  <div class="animated-word mb-3">{% for ch in code|string %}<span class="letter">{{ ch }}</span>{% endfor %}</div>
+  <h1 class="h4">{{ title }}</h1>
+  <a href="{{ url_for('foods.index') }}" class="btn btn-primary mt-3">Back to the catalogue</a>
+</div>
+{% endblock %}

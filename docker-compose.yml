@@ -1,0 +1,165 @@
+# FitnessApp 2.0 — entorno completo (web + MongoDB + Kafka + productor + consumidor)
+#
+#   cp .env.example .env      # y rellena los valores
+#   docker compose up --build
+#   -> http://localhost:8000
+#
+# Panel opcional para ver los mensajes de Kafka (http://localhost:8080):
+#   docker compose --profile tools up -d kafka-ui
+#
+# Cambios respecto al original: sin ZooKeeper (Kafka 4 en modo KRaft), imágenes con versión
+# fija, healthchecks en vez de time.sleep(), MongoDB con usuario/contraseña y puertos
+# expuestos solo en localhost.
+
+name: fitnessapp2026
+
+x-mongo-uri: &mongo-uri mongodb://${MONGO_APP_USER:?falta MONGO_APP_USER en .env}:${MONGO_APP_PASSWORD:?falta MONGO_APP_PASSWORD en .env}@mongodb:27017/fitnessapp
+
+services:
+  mongodb:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?falta MONGO_ROOT_PASSWORD en .env}
+      MONGO_INITDB_DATABASE: fitnessapp
+      MONGO_APP_DB: fitnessapp
+      MONGO_APP_USER: ${MONGO_APP_USER}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo/init-app-user.js:/docker-entrypoint-initdb.d/init-app-user.js:ro
+    # Solo accesible desde tu propio PC (p. ej. con MongoDB Compass), no desde la red
+    ports:
+      - "127.0.0.1:27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  kafka:
+    image: apache/kafka:4.1.0
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  # Publica el CSV en Kafka y termina (es un trabajo de una sola vez)
+  producer:
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    command: ["python", "-m", "fitness_pipeline.producer"]
+    restart: "no"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # Lee Kafka y guarda el catálogo en MongoDB (se queda escuchando)
+  consumer:
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    command: ["python", "-m", "fitness_pipeline.consumer"]
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MONGO_URI: *mongo-uri
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?falta SECRET_KEY en .env}
+      MONGO_URI: *mongo-uri
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-FitnessApp/2.0}
+      # En local se usa http, así que la cookie no puede exigir https
+      SESSION_COOKIE_SECURE: "false"
+      PROXY_COUNT: "0"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.3.0
+    profiles: ["tools"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: fitnessapp
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # ---- Tests (no se arrancan con "up"): docker compose --profile test run --rm tests ----
+  mongo-test:
+    image: mongo:8.0
+    profiles: ["test"]
+    tmpfs: [/data/db]          # base de datos en memoria, se borra al parar
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  tests:
+    image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+    profiles: ["test"]
+    working_dir: /src
+    volumes:
+      - .:/src
+    environment:
+      UV_PROJECT_ENVIRONMENT: /tmp/venv
+      UV_LINK_MODE: copy
+    command:
+      - sh
+      - -c
+      - >-
+        cd /src/web && uv sync --frozen -q && uv run ruff check . && uv run ruff format --check . &&
+        MONGO_TEST_URI=mongodb://mongo-test:27017/fitnessapp_test uv run pytest -q &&
+        cd /src/pipeline && UV_PROJECT_ENVIRONMENT=/tmp/venv-pipeline uv sync --frozen -q &&
+        UV_PROJECT_ENVIRONMENT=/tmp/venv-pipeline uv run ruff check . &&
+        UV_PROJECT_ENVIRONMENT=/tmp/venv-pipeline uv run ruff format --check . &&
+        MONGO_TEST_URI=mongodb://mongo-test:27017/pipeline_test UV_PROJECT_ENVIRONMENT=/tmp/venv-pipeline uv run pytest -q
+    depends_on:
+      mongo-test:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+  kafka_data:

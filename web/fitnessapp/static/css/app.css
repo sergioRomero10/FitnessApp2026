@@ -1,0 +1,257 @@
+/*
+ * FitnessApp 2.0 — estilos propios sobre Bootstrap 5.3 (tema oscuro).
+ * Se mantiene la esencia del original: fondo oscuro, rojo #de1425, navbar con brillo
+ * rojo y el título FITNESSAPP con letras huecas que saltan al pasar el ratón.
+ */
+
+:root {
+  --fa-red: #de1425;
+  --fa-red-rgb: 222, 20, 37;
+  --fa-red-soft: rgba(var(--fa-red-rgb), 0.15);
+  --fa-bg: #0f1115;
+  --fa-surface: #171a21;
+  --fa-surface-2: #1f232c;
+  --fa-border: #2a2f3a;
+  --fa-text-muted: #9aa3b2;
+
+  --bs-primary: var(--fa-red);
+  --bs-primary-rgb: var(--fa-red-rgb);
+  --bs-link-color-rgb: 255, 99, 112;
+  --bs-link-hover-color-rgb: 255, 140, 150;
+  --bs-body-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-bs-theme="dark"] {
+  --bs-body-bg: var(--fa-bg);
+  --bs-body-color: #e8eaef;
+  --bs-border-color: var(--fa-border);
+  --bs-secondary-color: var(--fa-text-muted);
+  --bs-tertiary-bg: var(--fa-surface);
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(1200px 500px at 50% -200px, rgba(var(--fa-red-rgb), 0.18), transparent 70%),
+    var(--fa-bg);
+}
+
+main { flex: 1; }
+
+/* ---------- Navbar ---------- */
+.navbar-glow {
+  background: rgba(15, 17, 21, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(var(--fa-red-rgb), 0.5);
+  box-shadow: 0 0 25px rgba(var(--fa-red-rgb), 0.45);
+}
+
+.navbar .nav-link {
+  position: relative;
+  color: #d5d9e0;
+  font-weight: 500;
+}
+
+/* Subrayado rojo animado del original */
+.navbar .nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0.25rem;
+  height: 2px;
+  background: var(--fa-red);
+  transform: scaleX(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+.navbar .nav-link:hover::after,
+.navbar .nav-link.active::after { transform: scaleX(1); }
+.navbar .nav-link.active { color: #fff; }
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--fa-red);
+}
+
+/* ---------- Título animado FITNESSAPP ---------- */
+.animated-word {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  user-select: none;
+}
+
+.letter {
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-size: clamp(2.6rem, 9vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--fa-red);
+  transition: transform 0.4s, color 0.4s, text-shadow 0.4s;
+  cursor: default;
+}
+
+.letter:hover {
+  transform: translateY(-0.6rem);
+  color: var(--fa-red);
+  text-shadow: 0 0 18px rgba(var(--fa-red-rgb), 0.7);
+}
+
+.hero-subtitle {
+  color: var(--fa-text-muted);
+  max-width: 40rem;
+  margin: 0.75rem auto 0;
+}
+
+.page-title {
+  font-family: "Bebas Neue", "Inter", sans-serif;
+  font-size: 2.6rem;
+  letter-spacing: 0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--fa-red);
+}
+
+/* ---------- Tarjetas y tablas ---------- */
+.fa-card {
+  background: var(--fa-surface);
+  border: 1px solid var(--fa-border);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.fa-card-hover { transition: transform 0.2s, border-color 0.2s; }
+.fa-card-hover:hover { transform: translateY(-3px); border-color: rgba(var(--fa-red-rgb), 0.6); }
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: var(--fa-red-soft);
+  margin-bottom: 0;
+}
+
+.table > thead th {
+  color: var(--fa-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom-color: rgba(var(--fa-red-rgb), 0.6);
+}
+
+.kcal-badge {
+  display: inline-block;
+  min-width: 4.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--fa-red-soft);
+  color: #ff8f99;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
+}
+
+.category-chip {
+  font-size: 0.8rem;
+  color: var(--fa-text-muted);
+}
+
+/* ---------- Botones ---------- */
+.btn-primary {
+  --bs-btn-bg: var(--fa-red);
+  --bs-btn-border-color: var(--fa-red);
+  --bs-btn-hover-bg: #b80f1e;
+  --bs-btn-hover-border-color: #b80f1e;
+  --bs-btn-active-bg: #a10d1a;
+  --bs-btn-active-border-color: #a10d1a;
+  --bs-btn-disabled-bg: var(--fa-red);
+  --bs-btn-disabled-border-color: var(--fa-red);
+}
+
+.btn-fav {
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  transition: transform 0.15s, color 0.15s;
+}
+
+.btn-fav:hover { color: #ffc107; transform: scale(1.15); }
+.btn-fav.is-fav { color: #ffc107; }
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(var(--fa-red-rgb), 0.7);
+  box-shadow: 0 0 0 0.2rem rgba(var(--fa-red-rgb), 0.25);
+}
+
+/* ---------- Estadísticas / total ---------- */
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--fa-text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Login ---------- */
+.login-card { max-width: 26rem; }
+
+.btn-google {
+  background: #fff;
+  color: #1f1f1f;
+  border: 1px solid #dadce0;
+  font-weight: 500;
+}
+
+.btn-google:hover { background: #f1f3f4; color: #1f1f1f; }
+
+/* ---------- Mapa de gimnasios y calendario ---------- */
+#gym-map {
+  height: 420px;
+  border-radius: 1rem;
+  border: 1px solid var(--fa-border);
+}
+
+.gym-item { cursor: pointer; }
+.gym-item:hover { background: var(--fa-red-soft); }
+
+#calendar {
+  --fc-border-color: var(--fa-border);
+  --fc-page-bg-color: var(--fa-surface);
+  --fc-neutral-bg-color: var(--fa-surface-2);
+  --fc-today-bg-color: rgba(var(--fa-red-rgb), 0.12);
+  --fc-event-bg-color: var(--fa-red);
+  --fc-event-border-color: var(--fa-red);
+  --fc-button-bg-color: var(--fa-surface-2);
+  --fc-button-border-color: var(--fa-border);
+  --fc-button-hover-bg-color: #2b303b;
+  --fc-button-active-bg-color: var(--fa-red);
+  --fc-button-active-border-color: var(--fa-red);
+}
+
+#calendar a { color: inherit; text-decoration: none; }
+
+/* ---------- Pie ---------- */
+footer {
+  color: var(--fa-text-muted);
+  border-top: 1px solid var(--fa-border);
+  font-size: 0.875rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter, .fa-card-hover, .btn-fav, .navbar .nav-link::after { transition: none; }
+}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_macros.html" import animated_word, pagination, empty_state %}
+{% block title %}Foods{% endblock %}
+
+{% block content %}
+<section class="text-center mb-4 mb-lg-5">
+  {{ animated_word() }}
+  <p class="hero-subtitle">Look up the calories of more than 2,000 foods, save your favourites and build your own diets.</p>
+</section>
+
+<form class="fa-card p-3 mb-3" method="get" action="{{ url_for('foods.index') }}" role="search">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search a food… (e.g. apple, pizza)" aria-label="Search a food" autofocus>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <select name="category" class="form-select" aria-label="Category" onchange="this.form.submit()">
+        <option value="">All categories</option>
+        {% for c in categories %}
+        <option value="{{ c }}" {{ 'selected' if c == category }}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-grid">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+  </div>
+</form>
+
+<p class="small text-secondary mb-2">
+  {{ result.total }} food{{ 's' if result.total != 1 }}{% if q or category %} found ·
+  <a href="{{ url_for('foods.index') }}">clear filters</a>{% endif %}
+  {% if not current_user %} · <a href="{{ url_for('auth.login', next=request.full_path) }}">log in</a> to save favourites{% endif %}
+</p>
+
+{% if result.items %}
+<div class="fa-card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Food</th>
+          <th scope="col" class="d-none d-md-table-cell">Category</th>
+          <th scope="col" class="text-end">kcal / 100</th>
+          <th scope="col" class="text-end d-none d-sm-table-cell">kJ / 100</th>
+          <th scope="col" class="text-center" style="width: 4rem"><span class="visually-hidden">Favourite</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for food in result.items %}
+        {% set is_fav = food.key in favorites %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ food.name }}</div>
+            <div class="category-chip d-md-none">{{ food.category }}</div>
+          </td>
+          <td class="d-none d-md-table-cell category-chip">{{ food.category }}</td>
+          <td class="text-end"><span class="kcal-badge">{{ '%g'|format(food.kcal_per_100) }}</span> <span class="small text-secondary">/{{ food.unit }}</span></td>
+          <td class="text-end d-none d-sm-table-cell text-secondary">{{ '%g'|format(food.kj_per_100) }}</td>
+          <td class="text-center">
+            <form method="post" action="{{ url_for('favorites.toggle') }}" class="js-fav-form">
+              {{ fav_form.csrf_token }}
+              <input type="hidden" name="key" value="{{ food.key }}">
+              <button type="submit" class="btn-fav {{ 'is-fav' if is_fav }}"
+                      aria-pressed="{{ 'true' if is_fav else 'false' }}"
+                      title="{{ 'Remove from favourites' if is_fav else 'Add to favourites' }}">
+                <i class="bi {{ 'bi-star-fill' if is_fav else 'bi-star' }}"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ pagination(result, 'foods.index') }}
+{% else %}
+{{ empty_state('search', 'No foods found', 'Try another name or category.', url_for('foods.index'), 'Show all foods') }}
+{% endif %}
+{% endblock %}
